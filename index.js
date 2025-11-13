@@ -10,10 +10,16 @@ const client = new Client({
 });
 
 // Generate QR code for first login
+const QRCode = require('qrcode');
+const fs = require('fs');
+
 client.on('qr', qr => {
-    console.log('Scan this QR code with your WhatsApp Business app:');
-    qrcode.generate(qr, { small: true });
+    QRCode.toFile('whatsapp-qr.png', qr, { type: 'png' }, function (err) {
+        if (err) console.error(err);
+        else console.log('QR code saved as whatsapp-qr.png. Scan it with your WhatsApp!');
+    });
 });
+
 
 // Bot ready
 client.on('ready', () => {
