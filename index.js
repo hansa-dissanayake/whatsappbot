@@ -1,10 +1,11 @@
 const express = require('express');
 const fs = require('fs');
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const QRCode = require('qrcode'); // for PNG generation
-const app = express(); // important!
+const QRCode = require('qrcode');
+const qrcodeTerminal = require('qrcode-terminal');
 
-
+// Initialize client
+const PORT = process.env.PORT || 3000;
 
 // Track conversation state per user
 const userStates = {};
@@ -14,36 +15,30 @@ const client = new Client({
     authStrategy: new LocalAuth()
 });
 
-// Generate QR code for first login
-
+// Handle QR
 client.on('qr', async (qr) => {
-    try {
-        await QRCode.toFile('whatsapp-qr.png', qr, { color: { dark: '#000', light: '#FFF' }});
-        console.log('✅ QR code saved as whatsapp-qr.png! Scan it via /qr route.');
-        qrcode.generate(qr, { small: true }); // optional console output
-    } catch (err) {
-        console.error('❌ Error generating QR PNG:', err);
-    }
+  try {
+    await QRCode.toFile('whatsapp-qr.png', qr, { color: { dark: '#000', light: '#FFF' } });
+    console.log('✅ QR code saved as whatsapp-qr.png! Scan it via /qr route.');
+    qrcodeTerminal.generate(qr, { small: true }); // now works!
+  } catch (err) {
+    console.error('❌ Error generating QR PNG:', err);
+  }
 });
 
-
-
+// Serve QR PNG
 app.get('/qr', (req, res) => {
-    const filePath = './whatsapp-qr.png'; // must match QR save path
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath, { root: __dirname });
-    } else {
-        res.send('QR code not generated yet. Please wait a few seconds.');
-    }
+  const filePath = './whatsapp-qr.png';
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath, { root: __dirname });
+  } else {
+    res.send('QR code not generated yet. Please wait a few seconds.');
+  }
 });
-
-
-
-
 
 // Bot ready
 client.on('ready', () => {
-    console.log('✅ WhatsApp Bot is ready!');
+  console.log('✅ WhatsApp Bot is ready!');
 });
 
 // Keywords and responses
@@ -348,11 +343,10 @@ msg.reply(reply);
 
 });
 
-// Initialize client
-const PORT = process.env.PORT || 3000;
+
 
 app.listen(PORT, () => {
-    console.log(`HTTP server running on port ${PORT}`);
-    client.initialize(); // start WhatsApp after server
+  console.log(`HTTP server running on port ${PORT}`);
+  client.initialize();
 });
 
