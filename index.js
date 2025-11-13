@@ -1,11 +1,10 @@
 const express = require('express');
 const fs = require('fs');
-const app = express();
-const PORT = process.env.PORT || 3000; // Render automatically sets process.env.PORT
-
-
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const QRCode = require('qrcode'); // for PNG generation
+const app = express(); // important!
+
+
 
 // Track conversation state per user
 const userStates = {};
@@ -16,27 +15,21 @@ const client = new Client({
 });
 
 // Generate QR code for first login
-const QRCode = require('qrcode');
-const fs = require('fs');
 
 client.on('qr', async (qr) => {
     try {
-        // Save QR code as PNG
-        await QRCode.toFile('qr.png', qr, {
-            color: {
-                dark: '#000',  // Black dots
-                light: '#FFF'  // White background
-            }
-        });
-        console.log('✅ QR code saved as qr.png! Scan it with your WhatsApp.');
+        await QRCode.toFile('whatsapp-qr.png', qr, { color: { dark: '#000', light: '#FFF' }});
+        console.log('✅ QR code saved as whatsapp-qr.png! Scan it via /qr route.');
+        qrcode.generate(qr, { small: true }); // optional console output
     } catch (err) {
         console.error('❌ Error generating QR PNG:', err);
     }
 });
 
 
+
 app.get('/qr', (req, res) => {
-    const filePath = './whatsapp-qr.png';
+    const filePath = './whatsapp-qr.png'; // must match QR save path
     if (fs.existsSync(filePath)) {
         res.sendFile(filePath, { root: __dirname });
     } else {
@@ -44,9 +37,6 @@ app.get('/qr', (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`HTTP server running on port ${PORT}`);
-});
 
 
 
@@ -359,4 +349,10 @@ msg.reply(reply);
 });
 
 // Initialize client
-client.initialize();
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`HTTP server running on port ${PORT}`);
+    client.initialize(); // start WhatsApp after server
+});
+
